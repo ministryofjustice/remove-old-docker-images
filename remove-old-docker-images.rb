@@ -26,22 +26,22 @@ class DockerCleaner
     puts 'delete images'
     re = Regexp.union(SAFE_IMAGES)
     $d_images.each do |img|
-     begin
+    begin
       if img[1].count > KEEP_LAST_IMAGES && ! img[0].match(re) && img[0].to_s != "<none>"
-  d = img[1].count
-  img[1] = img[1].drop(KEEP_LAST_IMAGES)
+        d = img[1].count
+        img[1] = img[1].drop(KEEP_LAST_IMAGES)
         img[1].each do |i|
-   if i['created'].to_i < Chronic.parse("#{KEEP_IMAGES_FOR} ago").to_i
-     puts "Removing: #{Time.at(i['created']).strftime("%F").to_s} - #{img[0]}:#{i['version']}"
-     puts i['id']
-     image = Docker::Image.get(i['id'])
-     image.remove
-         end
-  end
+          if i['created'].to_i < Chronic.parse("#{KEEP_IMAGES_FOR} ago").to_i
+            puts "Removing: #{Time.at(i['created']).strftime("%F").to_s} - #{img[0]}:#{i['version']}"
+            puts i['id']
+            image = Docker::Image.get(i['id'])
+            image.remove
+          end
+        end
       end
-     rescue
-      puts "error occured, skipping"
-     end
+      rescue
+        puts "error occured, skipping"
+      end
     end
   end
 
@@ -50,16 +50,15 @@ class DockerCleaner
     tmp = Hash.new
     out = Array.new
     $d_images.each do |i|
-  tag_base = i['tags'].split(':')
-  if ! tmp.has_key?(tag_base[0])
-    tmp[tag_base[0]] = Array.new
-  end
-        tmp[tag_base[0]].push(
-    {
+      tag_base = i['tags'].split(':')
+      if ! tmp.has_key?(tag_base[0])
+        tmp[tag_base[0]] = Array.new
+      end
+      tmp[tag_base[0]].push({
         'version' => tag_base[1],
         'id' => i['id'],
         'created' => i['created']
-    })
+      })
     end
     tmp.each do |img|
       img[1] = img[1].sort_by { |h| h['created'] }.reverse!
@@ -76,8 +75,8 @@ class DockerCleaner
     images.each do |img|
       results.push(
         'id' => img.id,
-  'created' => img.info['Created'],
-  'tags' => img.info['RepoTags'][0],
+        'created' => img.info['Created'],
+        'tags' => img.info['RepoTags'][0],
       )
     end
     return results
